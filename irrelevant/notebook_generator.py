@@ -87,10 +87,7 @@ def generate_markdown_block(lines):
 
 
 def is_interactive_statement(line):
-    for prefix in STATEMENT_PREFIXES:
-        if line.lstrip().startswith(prefix):
-            return True
-    return False
+    return any(line.lstrip().startswith(prefix) for prefix in STATEMENT_PREFIXES)
 
 
 def parse_example_parts(lines, title, current_line):
@@ -109,7 +106,7 @@ def parse_example_parts(lines, title, current_line):
     output_so_far = []
     next_line = current_line
     # store build_up till an H4 (explanation) is encountered
-    while not (next_line.startswith("#### ")or next_line.startswith('---')):
+    while not next_line.startswith("#### ") and not next_line.startswith('---'):
         # Watching out for the snippets
         if next_line.startswith("```py"):
             # It's a snippet, whatever found until now is text
@@ -128,25 +125,19 @@ def parse_example_parts(lines, title, current_line):
                         parts["build_up"].append(generate_code_block(statements_so_far, output_so_far))
                         statements_so_far, output_so_far = [], []
                     statements_so_far.append(next_line)
+                elif is_interactive or output_encountered:
+                    output_so_far.append(next_line)
                 else:
-                    # can be either output or normal code
-                    if is_interactive:
-                        output_so_far.append(next_line)
-                    elif output_encountered:
-                        output_so_far.append(next_line)
-                    else:
-                        statements_so_far.append(next_line)
+                    statements_so_far.append(next_line)
                 next_line = next(lines)
 
             # Snippet is over
             parts["build_up"].append(generate_code_block(statements_so_far, output_so_far))
             statements_so_far, output_so_far = [], []
-            next_line = next(lines)
         else:
             # It's a text, go on.
             content.append(next_line)
-            next_line = next(lines)
-
+        next_line = next(lines)
     # Explanation encountered, save any content till now (if any)
     if content:
         parts["build_up"].append(generate_markdown_block(content))
@@ -156,8 +147,7 @@ def parse_example_parts(lines, title, current_line):
     statements_so_far, output_so_far = [], []
 
     # store lines again until --- or another H3 is encountered
-    while not (next_line.startswith("---") or
-               next_line.startswith("### ")):
+    while not next_line.startswith("---") and not next_line.startswith("### "):
         if next_line.lstrip().startswith("```py"):
             # It's a snippet, whatever found until now is text
             is_interactive = False
@@ -174,23 +164,19 @@ def parse_example_parts(lines, title, current_line):
                         parts["explanation"].append(generate_code_block(statements_so_far, output_so_far))
                         statements_so_far, output_so_far = [], []
                     statements_so_far.append(next_line)
+                elif is_interactive:
+                    output_so_far.append(next_line)
                 else:
-                    # can be either output or normal code
-                    if is_interactive:
-                        output_so_far.append(next_line)
-                    else:
-                        statements_so_far.append(next_line)
+                    statements_so_far.append(next_line)
                 next_line = next(lines)
 
             # Snippet is over
             parts["explanation"].append(generate_code_block(statements_so_far, output_so_far))
             statements_so_far, output_so_far = [], []
-            next_line = next(lines)
         else:
             # It's a text, go on.
             content.append(next_line)
-            next_line = next(lines)
-
+        next_line = next(lines)
     # All done
     if content:
         parts["explanation"].append(generate_markdown_block(content))

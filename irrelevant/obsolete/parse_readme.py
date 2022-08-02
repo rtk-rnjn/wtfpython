@@ -10,11 +10,12 @@ After the refactor, this module would not work now with necessary updates in
 the code.
 """
 
+
 try:
     raw_input          # Python 2
 except NameError:
     raw_input = input  # Python 3
-    
+
 
 fname = "README.md"
 snippets = []
@@ -78,7 +79,7 @@ with open("add_categories", "r") as f:
         while True:
             title = content.next()
             cat = content.next().strip()
-            is_new = True if cat[-1]=="*" else False
+            is_new = cat[-1] == "*"
             cat = cat.replace('*','')
             snips_by_title[title] = {
                 "category": cat,
